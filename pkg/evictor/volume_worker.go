@@ -41,7 +41,10 @@ func (ev *evictor) startVolumeWorker(stopCh <-chan struct{}) {
 }
 
 func (ev *evictor) evictVolume(task string) error {
-	volName, srcNodeName := parseEvictVolumeTask(task)
+	volName, srcNodeName, err := parseEvictVolumeTask(task)
+	if err != nil {
+		return err
+	}
 	logCtx := log.WithFields(log.Fields{"volume": volName, "sourceNode": srcNodeName})
 	logCtx.Debug("Start to process a volume eviction")
 
@@ -108,8 +111,11 @@ func (ev *evictor) addEvictVolume(volName string, srcNodeName string) {
 	ev.evictVolumeQueue.AddRateLimited(fmt.Sprintf("%s/%s", volName, srcNodeName))
 }
 
-func parseEvictVolumeTask(task string) (volName string, srcNodeName string) {
+func parseEvictVolumeTask(task string) (volName string, srcNodeName string, err error) {
 	items := strings.Split(task, "/")
+	if len(items) != 2 || items[0] == "" || items[1] == "" {
+		return "", "", fmt.Errorf("invalid eviction volume task %q", task)
+	}
 	volName = items[0]
 	srcNodeName = items[1]
 	return

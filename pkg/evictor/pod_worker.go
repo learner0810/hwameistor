@@ -36,7 +36,10 @@ func (ev *evictor) evictPod(task string) error {
 	logCtx := log.WithField("pod", task)
 	logCtx.Debug("Start to process a node eviction")
 
-	podNamespace, podName := parseEvictPodTask(task)
+	podNamespace, podName, err := parseEvictPodTask(task)
+	if err != nil {
+		return err
+	}
 	pod, err := ev.podInformer.Lister().Pods(podNamespace).Get(podName)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -92,8 +95,11 @@ func (ev *evictor) addEvictPod(namespace, name string) {
 	ev.evictPodQueue.AddRateLimited(fmt.Sprintf("%s/%s", namespace, name))
 }
 
-func parseEvictPodTask(task string) (podNamespace string, podName string) {
+func parseEvictPodTask(task string) (podNamespace string, podName string, err error) {
 	items := strings.Split(task, "/")
+	if len(items) != 2 || items[0] == "" || items[1] == "" {
+		return "", "", fmt.Errorf("invalid eviction pod task %q", task)
+	}
 	podNamespace = items[0]
 	podName = items[1]
 	return
