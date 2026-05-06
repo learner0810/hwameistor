@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"strings"
 
@@ -43,11 +44,10 @@ func (m *manager) processLocalDisk(localDiskNameSpacedName string) error {
 	logCtx := m.logger.WithFields(log.Fields{"localDisk": localDiskNameSpacedName})
 	logCtx.Debug("Working on a localDisk task")
 	splitRes := strings.Split(localDiskNameSpacedName, "/")
-	var diskName string
-	if len(splitRes) >= 2 {
-		// nameSpace = splitRes[0]
-		diskName = splitRes[1]
+	if len(splitRes) != 2 || splitRes[0] == "" || splitRes[1] == "" {
+		return fmt.Errorf("invalid localDisk task %q", localDiskNameSpacedName)
 	}
+	diskName := splitRes[1]
 
 	localDisk := &apisv1alpha1.LocalDisk{}
 	if err := m.apiClient.Get(context.TODO(), types.NamespacedName{Name: diskName}, localDisk); err != nil {

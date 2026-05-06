@@ -48,11 +48,10 @@ func (m *manager) processLocalDiskClaim(localDiskNameSpacedName string) error {
 	logCtx.Debug("start processing LocalDiskClaim")
 
 	splitRes := strings.Split(localDiskNameSpacedName, "/")
-	var nameSpace, diskName string
-	if len(splitRes) >= 2 {
-		nameSpace = splitRes[0]
-		diskName = splitRes[1]
+	if len(splitRes) != 2 || splitRes[0] == "" || splitRes[1] == "" {
+		return fmt.Errorf("invalid LocalDiskClaim task %q", localDiskNameSpacedName)
 	}
+	nameSpace, diskName := splitRes[0], splitRes[1]
 	localDiskClaim := &apisv1alpha1.LocalDiskClaim{}
 	if err := m.apiClient.Get(context.TODO(), types.NamespacedName{Namespace: nameSpace, Name: diskName}, localDiskClaim); err != nil {
 		if !errors.IsNotFound(err) {
