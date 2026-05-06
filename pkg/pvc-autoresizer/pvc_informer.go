@@ -88,6 +88,9 @@ func (a *PVCAttacher) process(pvc *corev1.PersistentVolumeClaim) error {
 	if resizePolicy != nil {
 		log.Infof("determined resizepolicy:%v for pvc: %v:%v", resizePolicy.Name, pvc.Namespace, pvc.Name)
 		newPVC := pvc.DeepCopy()
+		if newPVC.Annotations == nil {
+			newPVC.Annotations = map[string]string{}
+		}
 		newPVC.Annotations[PVCResizePolicyAnnotationKey] = resizePolicy.Name
 		if err := a.cli.Patch(context.TODO(), newPVC, client.MergeFrom(pvc)); err != nil {
 			log.Errorf("patch pvc err: %v", err)

@@ -60,6 +60,9 @@ func (h *Hooker) Start() {
 				return
 			}
 			if len(resizePolicyList.Items) > 0 {
+				if pvc.Annotations == nil {
+					pvc.Annotations = map[string]string{}
+				}
 				pvc.Annotations[PVCResizePolicyAnnotationKey] = defaultResizePolicy
 				if err := h.Client.Update(h.Context, pvc); err != nil {
 					log.Errorf("add annotation err for pvc %v in namespace %v, err: %v", pvc.Name, pvc.Namespace, err)
