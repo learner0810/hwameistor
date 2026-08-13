@@ -428,6 +428,9 @@ func (lsnController *LocalStorageNodeController) ReserveStorageNodeDisk(queryPag
 		log.Errorf("failed to get localDisk %s", err.Error())
 		return RspBody, err
 	}
+	if len(localDisks) == 0 {
+		return RspBody, fmt.Errorf("no local disk found for node %q and device %q", queryPage.NodeName, hwameistorapi.DEV+queryPage.DeviceShortPath)
+	}
 	ld := &localDisks[0]
 	log.Infof("ReserveStorageNodeDisk ld = %v", ld)
 	lsnController.ldHandler = lsnController.ldHandler.For(ld)
@@ -460,6 +463,9 @@ func (lsnController *LocalStorageNodeController) RemoveReserveStorageNodeDisk(qu
 	if err != nil {
 		log.Errorf("failed to get localDisk %s", err.Error())
 		return RspBody, err
+	}
+	if len(localDisks) == 0 {
+		return RspBody, fmt.Errorf("no local disk found for node %q and device %q", queryPage.NodeName, hwameistorapi.DEV+queryPage.DeviceShortPath)
 	}
 	ld := &localDisks[0]
 	ld.Spec.Reserved = false
