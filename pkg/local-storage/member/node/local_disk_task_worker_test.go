@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"testing"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -12,6 +13,34 @@ import (
 	"github.com/hwameistor/hwameistor/pkg/local-storage/member/node/diskmonitor"
 	"github.com/hwameistor/hwameistor/pkg/local-storage/member/node/storage"
 )
+
+func TestStartLocalDiskTaskWorkerShutsDownItsQueue(t *testing.T) {
+	m := &manager{
+		localDiskTaskQueue:     common.NewTaskQueue("localDisk", maxRetries),
+		volumeReplicaTaskQueue: common.NewTaskQueue("VolumeReplicaTask", maxRetries),
+		logger:                 log.WithField("Module", "NodeManager"),
+	}
+	defer m.volumeReplicaTaskQueue.Shutdown()
+
+	stopCh := make(chan struct{})
+	close(stopCh)
+	m.startLocalDiskTaskWorker(stopCh)
+
+	result := make(chan bool, 1)
+	go func() {
+		_, shutdown := m.localDiskTaskQueue.Get()
+		result <- shutdown
+	}()
+
+	select {
+	case shutdown := <-result:
+		if !shutdown {
+			t.Fatal("local disk task queue is not shut down")
+		}
+	case <-time.After(time.Second):
+		t.Fatal("local disk task queue remained blocked after worker shutdown")
+	}
+}
 
 func Test_manager_processLocalDisk(t *testing.T) {
 	type fields struct {
